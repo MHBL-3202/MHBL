@@ -1,10 +1,11 @@
 --[[
     MHBL-HUB | ULTIMATE PREMIUM (SEA 3 FULL)
     Giao diện: Rayfield
-    Trạng thái: Hết lỏ - Đầy đủ tính năng
+    Tính năng: Fast Attack, Auto Farm, ESP, Auto Chest, Săn Boss
 ]]
 
--- 0. ANTI-AFK & TỐI ƯU
+-- 0. TỐI ƯU & ANTI-AFK
+if not game:IsLoaded() then game.Loaded:Wait() end
 game:GetService("Players").LocalPlayer.Idled:Connect(function()
     game:GetService("VirtualUser"):Button2Down(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
     task.wait(1)
@@ -20,8 +21,8 @@ end
 -- 2. KHỞI TẠO UI
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Window = Rayfield:CreateWindow({
-   Name = "MHBL-HUB | BANANA EDITION 🍌",
-   LoadingTitle = "Đang nạp hệ thống Sea 3 Premium...",
+   Name = "MHBL-HUB | PREMIUM 🍌",
+   LoadingTitle = "Banana System Initializing...",
    ImageToggle = { Enabled = true, Image = "rbxassetid://14374867455", Width = 60, Height = 60 }
 })
 
@@ -29,14 +30,12 @@ local Window = Rayfield:CreateWindow({
 _G.AutoFarm = false
 _G.FastAttack = true
 _G.AutoStats = false
-_G.StatPoint = "Melee"
-_G.AutoRandom = false
-_G.AutoStore = false
-_G.SelectWeapon = "Melee"
 _G.AutoChest = false
-_G.AutoElite = false
+_G.AutoRandom = false
+_G.ESP_Player = false
+_G.StatPoint = "Melee"
 
--- 4. HÀM HỖ TRỢ CHUYÊN NGHIỆP
+-- 4. HÀM PREMIUM
 local function Tween(Target)
     pcall(function()
         local Distance = (Target.p - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
@@ -44,31 +43,28 @@ local function Tween(Target)
     end)
 end
 
-local function Attack()
-    if _G.FastAttack then
-        game:GetService("VirtualUser"):CaptureController()
-        game:GetService("VirtualUser"):Button1Down(Vector2.new(1280, 672))
+-- Vòng lặp Fast Attack (Luôn chạy ngầm)
+spawn(function()
+    while task.wait() do
+        if (_G.AutoFarm or _G.AutoChest) and _G.FastAttack then
+            pcall(function()
+                game:GetService("VirtualUser"):CaptureController()
+                game:GetService("VirtualUser"):Button1Down(Vector2.new(1280, 672))
+            end)
+        end
     end
-end
+end)
 
--- 5. CÁC TAB CHỨC NĂNG (Dày đặc nút bấm)
+-- 5. CÁC TAB CHỨC NĂNG
 local MainTab = Window:CreateTab("Auto Farm", 4483345998)
-local BossTab = Window:CreateTab("Săn Boss", 4483345998)
-local StatsTab = Window:CreateTab("Chỉ Số", 4483345998)
+local ESPTab = Window:CreateTab("ESP & Player", 4483345998)
 local FruitTab = Window:CreateTab("Trái Ác Quỷ", 4483345998)
 local TPTab = Window:CreateTab("Dịch Chuyển", 4483345998)
 local MiscTab = Window:CreateTab("Linh Tinh", 4483345998)
 
 --- [ TAB AUTO FARM ] ---
-MainTab:CreateDropdown({
-   Name = "Chọn Vũ Khí Đang Dùng",
-   Options = {"Melee","Sword","Fruit"},
-   CurrentOption = {"Melee"},
-   Callback = function(Option) _G.SelectWeapon = Option[1] end,
-})
-
 MainTab:CreateToggle({
-   Name = "Bật Auto Farm Level (Sea 3)",
+   Name = "Auto Farm Level (Sea 3)",
    CurrentValue = false,
    Callback = function(Value) _G.AutoFarm = Value end,
 })
@@ -79,69 +75,48 @@ MainTab:CreateToggle({
    Callback = function(Value) _G.FastAttack = Value end,
 })
 
---- [ TAB SĂN BOSS ] ---
-BossTab:CreateToggle({
-   Name = "Auto Săn Elite Hunter (Yama)",
+--- [ TAB ESP ] ---
+ESPTab:CreateToggle({
+   Name = "Hiện Tên Người Chơi (ESP)",
    CurrentValue = false,
-   Callback = function(Value) _G.AutoElite = Value end,
-})
-
-BossTab:CreateButton({
-   Name = "Kiểm tra Boss Elite hiện tại",
-   Callback = function()
-       local Progress = game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("EliteHunter","Progress")
-       Rayfield:Notify({Title = "Elite Progress", Content = "Bạn đã diệt: "..tostring(Progress).." Boss", Duration = 5})
+   Callback = function(Value)
+      _G.ESP_Player = Value
+      while _G.ESP_Player do
+          task.wait(1)
+          for _, v in pairs(game.Players:GetPlayers()) do
+              if v ~= game.Players.LocalPlayer and v.Character and not v.Character:FindFirstChild("ESP") then
+                  local b = Instance.new("BillboardGui", v.Character)
+                  b.Name = "ESP"; b.AlwaysOnTop = true; b.Size = UDim2.new(0, 100, 0, 50)
+                  local l = Instance.new("TextLabel", b)
+                  l.Text = v.Name; l.Size = UDim2.new(1, 0, 1, 0); l.BackgroundTransparency = 1; l.TextColor3 = Color3.new(1, 0, 0)
+              end
+          end
+      end
    end,
-})
-
---- [ TAB AUTO STATS ] ---
-StatsTab:CreateDropdown({
-   Name = "Nâng vào điểm nào?",
-   Options = {"Melee","Defense","Sword","Demon Fruit"},
-   CurrentOption = {"Melee"},
-   Callback = function(Option) _G.StatPoint = Option[1] end,
-})
-
-StatsTab:CreateToggle({
-   Name = "Tự động cộng điểm khi lên cấp",
-   CurrentValue = false,
-   Callback = function(Value) _G.AutoStats = Value end,
 })
 
 --- [ TAB TRÁI ÁC QUỶ ] ---
-FruitTab:CreateToggle({
-   Name = "Tự động quay trái (Auto Random)",
-   CurrentValue = false,
-   Callback = function(Value) _G.AutoRandom = Value end,
+FruitTab:CreateButton({
+   Name = "Tự Động Quay Trái (Random)",
+   Callback = function() game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("Cousin","BuyItem") end,
 })
 
 FruitTab:CreateButton({
-   Name = "Cất Trái Đang Cầm (Store)",
+   Name = "Cất Trái Vào Kho (Store)",
    Callback = function()
-       for _, v in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
-           if v:IsA("Tool") and v:FindFirstChild("Fruit") then
-               game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StoreFruit", v:GetAttribute("FruitName"), v)
-           end
-       end
+      for _, v in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
+          if v:IsA("Tool") and v:FindFirstChild("Fruit") then
+              game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StoreFruit", v:GetAttribute("FruitName"), v)
+          end
+      end
    end,
 })
 
-FruitTab:CreateButton({
-   Name = "Mở Shop Trái Ác Quỷ Từ Xa",
-   Callback = function()
-       game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("GetFruits")
-       game.Players.LocalPlayer.PlayerGui.Main.FruitShop.Visible = true
-   end,
-})
-
---- [ TAB DỊCH CHUYỂN (SEA 3 FULL) ] ---
-TPTab:CreateLabel("Địa điểm Đảo Rùa & Mansion")
-TPTab:CreateButton({ Name = "Bay tới Mansion", Callback = function() Tween(CFrame.new(-12463, 374, -7523)) end })
-TPTab:CreateButton({ Name = "Bay tới Floating Turtle", Callback = function() Tween(CFrame.new(-13274, 532, -8038)) end })
-TPTab:CreateLabel("Địa điểm Cảng & Đảo Bánh")
-TPTab:CreateButton({ Name = "Bay tới Port Town", Callback = function() Tween(CFrame.new(-290, 7, 5329)) end })
-TPTab:CreateButton({ Name = "Bay tới Cake Land", Callback = function() Tween(CFrame.new(-2020, 38, -12124)) end })
-TPTab:CreateButton({ Name = "Bay tới Hydra Island", Callback = function() Tween(CFrame.new(5745, 610, -280)) end })
+--- [ TAB DỊCH CHUYỂN ] ---
+TPTab:CreateLabel("Địa Điểm Sea 3")
+TPTab:CreateButton({ Name = "Tới Mansion", Callback = function() Tween(CFrame.new(-12463, 374, -7523)) end })
+TPTab:CreateButton({ Name = "Tới Hydra Island", Callback = function() Tween(CFrame.new(5745, 610, -280)) end })
+TPTab:CreateButton({ Name = "Tới Cake Land", Callback = function() Tween(CFrame.new(-2020, 38, -12124)) end })
 
 --- [ TAB LINH TINH ] ---
 MiscTab:CreateToggle({
@@ -151,8 +126,11 @@ MiscTab:CreateToggle({
 })
 
 MiscTab:CreateButton({
-   Name = "Nhập Code Reset Chỉ Số (Nếu có)",
-   Callback = function() print("Code system coming soon") end,
+   Name = "Mở Shop Trái Ác Quỷ",
+   Callback = function()
+       game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("GetFruits")
+       game.Players.LocalPlayer.PlayerGui.Main.FruitShop.Visible = true
+   end,
 })
 
-Rayfield:Notify({Title = "MHBL-HUB PREMIUM", Content = "Chào mừng Boss! Menu đã sẵn sàng.", Duration = 5})
+Rayfield:Notify({Title = "MHBL-HUB PREMIUM", Content = "Chào Boss! Hệ thống đã sẵn sàng.", Duration = 5})
