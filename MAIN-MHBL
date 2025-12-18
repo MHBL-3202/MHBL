@@ -1,7 +1,7 @@
 --[[
-    MHBL-HUB | OFFICIAL SOURCE CODE (UPDATED)
+    MHBL-HUB | OFFICIAL SOURCE CODE (FULL LOGIC)
     Giao diện: Rayfield
-    Tính năng: Auto Farm Level, Auto Quest, Bring Mob
+    Tính năng: Auto Farm Level, Auto Quest, Bring Mob, Auto Click
 ]]
 
 -- 1. HỆ THỐNG KIỂM TRA KEY
@@ -10,11 +10,11 @@ if getgenv().Key ~= "MHBL-HUB" then
     return
 end
 
--- 2. KHỞI TẠO UI
+-- 2. KHỞI TẠO UI (RAYFIELD)
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Window = Rayfield:CreateWindow({
    Name = "MHBL-HUB | BANANA EDITION",
-   LoadingTitle = "Đang tải logic Farm...",
+   LoadingTitle = "Đang nạp dữ liệu MHBL...",
    ImageToggle = {
       Enabled = true,
       Image = "rbxassetid://14374867455", -- Nút Lá cờ VN
@@ -26,34 +26,58 @@ local Window = Rayfield:CreateWindow({
 _G.AutoFarm = false
 _G.SelectWeapon = "Melee"
 
--- 4. HÀM HỖ TRỢ (TWEEN & ATTACK)
+-- 4. HÀM HỖ TRỢ (TWEEN, CLICK, EQUIP)
 local function Tween(Target)
     pcall(function()
-        local Distance = (Target.p - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
-        game:GetService("TweenService"):Create(game.Players.LocalPlayer.Character.HumanoidRootPart, TweenInfo.new(Distance/300, Enum.EasingStyle.Linear), {CFrame = Target}):Play()
+        local Character = game.Players.LocalPlayer.Character
+        local Distance = (Target.p - Character.HumanoidRootPart.Position).Magnitude
+        game:GetService("TweenService"):Create(Character.HumanoidRootPart, TweenInfo.new(Distance/300, Enum.EasingStyle.Linear), {CFrame = Target}):Play()
     end)
 end
 
-local function Click()
+local function AutoClick()
     game:GetService("VirtualUser"):CaptureController()
     game:GetService("VirtualUser"):Button1Down(Vector2.new(1280, 672))
 end
 
--- 5. LOGIC AUTO FARM THEO LEVEL (Mẫu Sea 1)
-function GetTarget()
+local function EquipWeapon()
+    for _, v in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
+        if v.ToolTip == _G.SelectWeapon or v.Name == _G.SelectWeapon then
+            game.Players.LocalPlayer.Character.Humanoid:EquipTool(v)
+        end
+    end
+end
+
+local function BringMob(MobName)
+    for _, v in pairs(game.Workspace.Enemies:GetChildren()) do
+        if v.Name == MobName and v:FindFirstChild("HumanoidRootPart") then
+            v.HumanoidRootPart.CFrame = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame
+            v.HumanoidRootPart.CanCollide = false
+            v.Humanoid.WalkSpeed = 0
+            v.Humanoid.HealthDisplayType = Enum.HumanoidHealthDisplayType.AlwaysOn
+        end
+    end
+end
+
+-- 5. HỆ THỐNG QUÁI VÀ NHIỆM VỤ (Dành cho Đảo Đầu)
+function GetQuest()
     local LV = game.Players.LocalPlayer.Data.Level.Value
     if LV < 10 then
-        return "Bandit", "BanditQuest1", 1, CFrame.new(1059, 15, 1550) -- Tên quái, Tên Q, ID Q, CFrame NPC
-    elseif LV < 15 then
-        return "Monkey", "JungleQuest", 1, CFrame.new(-1598, 35, 153)
-    -- Bạn có thể thêm các đảo khác ở đây
+        return "Bandit", "BanditQuest1", 1, CFrame.new(1059, 15, 1550)
     else
         return "Monkey", "JungleQuest", 1, CFrame.new(-1598, 35, 153)
     end
 end
 
--- 6. GIAO DIỆN TAB
+-- 6. GIAO DIỆN TAB CHÍNH
 local MainTab = Window:CreateTab("Auto Farm", 4483345998)
+
+MainTab:CreateDropdown({
+   Name = "Chọn Vũ Khí",
+   Options = {"Melee","Sword","Fruit"},
+   CurrentOption = {"Melee"},
+   Callback = function(Option) _G.SelectWeapon = Option[1] end,
+})
 
 MainTab:CreateToggle({
    Name = "Auto Farm Level",
@@ -64,33 +88,25 @@ MainTab:CreateToggle({
           while _G.AutoFarm do
               task.wait()
               pcall(function()
-                  local MobName, QuestName, QuestID, NPCCFrame = GetTarget()
+                  local MobName, QuestName, QuestID, NPCCFrame = GetQuest()
                   
-                  -- Kiểm tra túi đồ đã cầm vũ khí chưa
-                  for _, v in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
-                      if v.ToolTip == _G.SelectWeapon then
-                          game.Players.LocalPlayer.Character.Humanoid:EquipTool(v)
-                      end
-                  end
-
-                  -- Logic Nhận Nhiệm Vụ
+                  -- Nếu chưa có nhiệm vụ thì đi nhận
                   if not game:GetService("Players").LocalPlayer.PlayerGui.Main:FindFirstChild("Quest") then
                       Tween(NPCCFrame)
                       if (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - NPCCFrame.p).Magnitude < 5 then
                           game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StartQuest", QuestName, QuestID)
                       end
                   else
-                      -- Logic Đánh Quái
-                      for _, v in pairs(game.Workspace.Enemies:GetChildren()) do
-                          if v.Name == MobName and v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
-                              repeat
-                                  task.wait()
-                                  v.HumanoidRootPart.CanCollide = false
-                                  v.HumanoidRootPart.Size = Vector3.new(60, 60, 60) -- Phóng to quái để dễ đánh
-                                  Tween(v.HumanoidRootPart.CFrame * CFrame.new(0, 10, 0))
-                                  Click()
-                              until not _G.AutoFarm or v.Humanoid.Health <= 0 or not game:GetService("Players").LocalPlayer.PlayerGui.Main:FindFirstChild("Quest")
-                          end
+                      -- Nếu có nhiệm vụ thì đi đánh quái
+                      local Target = game.Workspace.Enemies:FindFirstChild(MobName) or game.Workspace:FindFirstChild(MobName)
+                      if Target and Target:FindFirstChild("HumanoidRootPart") and Target.Humanoid.Health > 0 then
+                          EquipWeapon()
+                          Tween(Target.HumanoidRootPart.CFrame * CFrame.new(0, 10, 0)) -- Đứng trên đầu quái
+                          BringMob(MobName)
+                          AutoClick()
+                      else
+                          -- Nếu không thấy quái thì bay về bãi quái đợi spawn
+                          Tween(NPCCFrame * CFrame.new(0, 50, 0))
                       end
                   end
               end)
@@ -99,4 +115,4 @@ MainTab:CreateToggle({
    end,
 })
 
-Rayfield:Notify({Title = "MHBL-HUB", Content = "Đã sẵn sàng farm!", Duration = 5})
+Rayfield:Notify({Title = "MHBL-HUB KÍCH HOẠT", Content = "Nhấn Lá Cờ VN để ẩn/hiện!", Duration = 5})
