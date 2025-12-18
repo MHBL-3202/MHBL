@@ -1,10 +1,10 @@
 --[[
-    MHBL-HUB | ORION ULTIMATE EDITION
-    Giao diện: Orion UI (Mượt & Hiện đại)
+    MHBL-HUB | ORION PREMIUM EDITION
+    Giao diện: Orion UI (Hiện đại & Mượt)
     Tính năng: Full Sea 3, Fast Attack, Auto Stats, Auto Store Fruit, Teleport
 ]]
 
--- 0. ANTI-AFK (Treo máy xuyên đêm)
+-- 0. TỐI ƯU & ANTI-AFK
 if not game:IsLoaded() then game.Loaded:Wait() end
 game:GetService("Players").LocalPlayer.Idled:Connect(function()
     game:GetService("VirtualUser"):Button2Down(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
@@ -14,7 +14,7 @@ end)
 
 -- 1. KIỂM TRA KEY
 if getgenv().Key ~= "MHBL-HUB" then
-    game.Players.LocalPlayer:Kick("Vui lòng dùng đúng Key: MHBL-HUB")
+    game.Players.LocalPlayer:Kick("Sai Key! Vui lòng dùng: MHBL-HUB")
     return
 end
 
@@ -35,7 +35,7 @@ _G.AutoStats = false
 _G.StatPoint = "Melee"
 _G.AutoStore = false
 
--- 4. HÀM HỖ TRỢ
+-- 4. HÀM HỖ TRỢ (TWEEN & ATTACK)
 local function Tween(Target)
     pcall(function()
         local Distance = (Target.p - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
@@ -43,10 +43,10 @@ local function Tween(Target)
     end)
 end
 
--- Vòng lặp Fast Attack
+-- Fast Attack Loop (Đánh siêu tốc)
 spawn(function()
     while task.wait() do
-        if _G.AutoFarm and _G.FastAttack then
+        if (_G.AutoFarm or _G.AutoChest) and _G.FastAttack then
             pcall(function()
                 game:GetService("VirtualUser"):CaptureController()
                 game:GetService("VirtualUser"):Button1Down(Vector2.new(1280, 672))
@@ -56,20 +56,20 @@ spawn(function()
 end)
 
 -- 5. CÁC TAB CHỨC NĂNG
-local Tab1 = Window:MakeTab({ Name = "Tổng Quan", Icon = "rbxassetid://4483345998" })
+local Tab1 = Window:MakeTab({ Name = "Thông Tin", Icon = "rbxassetid://4483345998" })
 local Tab2 = Window:MakeTab({ Name = "Auto Farm", Icon = "rbxassetid://4483345998" })
 local Tab3 = Window:MakeTab({ Name = "Trái Ác Quỷ", Icon = "rbxassetid://4483345998" })
 local Tab4 = Window:MakeTab({ Name = "Dịch Chuyển", Icon = "rbxassetid://4483345998" })
 local Tab5 = Window:MakeTab({ Name = "Chỉ Số", Icon = "rbxassetid://4483345998" })
 
--- [ TAB 1: DASHBOARD ]
-Tab1:AddLabel("Xin chào: "..game.Players.LocalPlayer.DisplayName)
-Tab1:AddLabel("Level: "..game.Players.LocalPlayer.Data.Level.Value)
-Tab1:AddParagraph("Thông báo:","Chúc mừng bạn đã sở hữu bản MHBL Premium!")
+-- [ TAB 1: THÔNG TIN ]
+Tab1:AddLabel("Chào mừng: "..game.Players.LocalPlayer.DisplayName)
+Tab1:AddLabel("Cấp độ: "..game.Players.LocalPlayer.Data.Level.Value)
+Tab1:AddParagraph("MHBL-HUB","Giao diện Orion đã được kích hoạt. Chúc bạn farm vui vẻ!")
 
--- [ TAB 2: CÀY CẤP ]
+-- [ TAB 2: AUTO FARM ]
 Tab2:AddToggle({
-    Name = "Auto Farm Level (Sea 3)",
+    Name = "Bật Auto Farm Level (Sea 3)",
     Default = false,
     Callback = function(Value) _G.AutoFarm = Value end    
 })
@@ -80,11 +80,12 @@ Tab2:AddToggle({
     Callback = function(Value) _G.FastAttack = Value end    
 })
 
--- [ TAB 3: FRUIT SYSTEM ]
+-- [ TAB 3: TRÁI ÁC QUỶ ]
 Tab3:AddButton({
     Name = "Quay Trái Ác Quỷ (Random)",
     Callback = function() game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("Cousin","BuyItem") end
 })
 
 Tab3:AddToggle({
-    Name = "Auto Store Fruit (Tự cất trái
+    Name = "Tự Động Cất Trái (Auto Store)",
+    Default = false,
