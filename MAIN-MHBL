@@ -1,8 +1,15 @@
 --[[
-    MHBL-HUB | OFFICIAL SOURCE CODE (FULL LOGIC)
+    MHBL-HUB | PRO EDITION (SEA 3 + TELEPORT)
     Giao diện: Rayfield
-    Tính năng: Auto Farm Level, Auto Quest, Bring Mob, Auto Click
+    Tính năng: Auto Farm Sea 3, Fast Attack, Auto Stats, Teleport, Anti-AFK
 ]]
+
+-- 0. ANTI-AFK (Treo máy không bị văng)
+game:GetService("Players").LocalPlayer.Idled:Connect(function()
+    game:GetService("VirtualUser"):Button2Down(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
+    task.wait(1)
+    game:GetService("VirtualUser"):Button2Up(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
+end)
 
 -- 1. HỆ THỐNG KIỂM TRA KEY
 if getgenv().Key ~= "MHBL-HUB" then
@@ -10,77 +17,53 @@ if getgenv().Key ~= "MHBL-HUB" then
     return
 end
 
--- 2. KHỞI TẠO UI (RAYFIELD)
+-- 2. KHỞI TẠO UI
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Window = Rayfield:CreateWindow({
-   Name = "MHBL-HUB | BANANA EDITION",
-   LoadingTitle = "Đang nạp dữ liệu MHBL...",
-   ImageToggle = {
-      Enabled = true,
-      Image = "rbxassetid://14374867455", -- Nút Lá cờ VN
-      Width = 60, Height = 60
-   }
+   Name = "MHBL-HUB | PRO EDITION",
+   LoadingTitle = "Đang nạp hệ thống Sea 3...",
+   ImageToggle = { Enabled = true, Image = "rbxassetid://14374867455", Width = 60, Height = 60 }
 })
 
 -- 3. BIẾN ĐIỀU KHIỂN
 _G.AutoFarm = false
+_G.AutoStats = false
 _G.SelectWeapon = "Melee"
+_G.StatPoint = "Melee"
 
--- 4. HÀM HỖ TRỢ (TWEEN, CLICK, EQUIP)
+-- 4. HÀM HỖ TRỢ (TWEEN & LOGIC)
 local function Tween(Target)
     pcall(function()
-        local Character = game.Players.LocalPlayer.Character
-        local Distance = (Target.p - Character.HumanoidRootPart.Position).Magnitude
-        game:GetService("TweenService"):Create(Character.HumanoidRootPart, TweenInfo.new(Distance/300, Enum.EasingStyle.Linear), {CFrame = Target}):Play()
+        local Distance = (Target.p - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+        game:GetService("TweenService"):Create(game.Players.LocalPlayer.Character.HumanoidRootPart, TweenInfo.new(Distance/350, Enum.EasingStyle.Linear), {CFrame = Target}):Play()
     end)
 end
 
-local function AutoClick()
+-- Fast Attack Logic
+local function Attack()
     game:GetService("VirtualUser"):CaptureController()
     game:GetService("VirtualUser"):Button1Down(Vector2.new(1280, 672))
 end
 
-local function EquipWeapon()
-    for _, v in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
-        if v.ToolTip == _G.SelectWeapon or v.Name == _G.SelectWeapon then
-            game.Players.LocalPlayer.Character.Humanoid:EquipTool(v)
-        end
-    end
-end
-
-local function BringMob(MobName)
-    for _, v in pairs(game.Workspace.Enemies:GetChildren()) do
-        if v.Name == MobName and v:FindFirstChild("HumanoidRootPart") then
-            v.HumanoidRootPart.CFrame = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame
-            v.HumanoidRootPart.CanCollide = false
-            v.Humanoid.WalkSpeed = 0
-            v.Humanoid.HealthDisplayType = Enum.HumanoidHealthDisplayType.AlwaysOn
-        end
-    end
-end
-
--- 5. HỆ THỐNG QUÁI VÀ NHIỆM VỤ (Dành cho Đảo Đầu)
+-- 5. DỮ LIỆU NHIỆM VỤ SEA 3
 function GetQuest()
     local LV = game.Players.LocalPlayer.Data.Level.Value
-    if LV < 10 then
-        return "Bandit", "BanditQuest1", 1, CFrame.new(1059, 15, 1550)
-    else
-        return "Monkey", "JungleQuest", 1, CFrame.new(-1598, 35, 153)
-    end
+    if LV >= 1500 and LV < 1525 then return "Pirate Millionaire", "PortTownQuest", 1, CFrame.new(-290, 7, 5329)
+    elseif LV >= 1525 and LV < 1575 then return "Pistol Billionaire", "PortTownQuest", 2, CFrame.new(-290, 7, 5329)
+    elseif LV >= 1775 and LV < 1800 then return "Fishman Raider", "TurtleQuest1", 1, CFrame.new(-13274, 532, -8038)
+    elseif LV >= 2100 and LV < 2125 then return "Ice Cream Chef", "IceCreamIslandQuest", 1, CFrame.new(-906, 66, -12105)
+    elseif LV >= 2300 and LV < 2325 then return "Cookie Crafter", "CakeQuest1", 1, CFrame.new(-2020, 38, -12124)
+    else return "Pirate Millionaire", "PortTownQuest", 1, CFrame.new(-290, 7, 5329) end
 end
 
--- 6. GIAO DIỆN TAB CHÍNH
+-- 6. GIAO DIỆN TAB
 local MainTab = Window:CreateTab("Auto Farm", 4483345998)
+local StatsTab = Window:CreateTab("Auto Stats", 4483345998)
+local TPTab = Window:CreateTab("Teleport", 4483345998)
 
-MainTab:CreateDropdown({
-   Name = "Chọn Vũ Khí",
-   Options = {"Melee","Sword","Fruit"},
-   CurrentOption = {"Melee"},
-   Callback = function(Option) _G.SelectWeapon = Option[1] end,
-})
-
+-- Tab Auto Farm
 MainTab:CreateToggle({
-   Name = "Auto Farm Level",
+   Name = "Auto Farm Level (Sea 3)",
    CurrentValue = false,
    Callback = function(Value)
       _G.AutoFarm = Value
@@ -88,25 +71,18 @@ MainTab:CreateToggle({
           while _G.AutoFarm do
               task.wait()
               pcall(function()
-                  local MobName, QuestName, QuestID, NPCCFrame = GetQuest()
-                  
-                  -- Nếu chưa có nhiệm vụ thì đi nhận
+                  local Mob, QName, QID, NPC = GetQuest()
                   if not game:GetService("Players").LocalPlayer.PlayerGui.Main:FindFirstChild("Quest") then
-                      Tween(NPCCFrame)
-                      if (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - NPCCFrame.p).Magnitude < 5 then
-                          game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StartQuest", QuestName, QuestID)
+                      Tween(NPC)
+                      if (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - NPC.p).Magnitude < 5 then
+                          game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StartQuest", QName, QID)
                       end
                   else
-                      -- Nếu có nhiệm vụ thì đi đánh quái
-                      local Target = game.Workspace.Enemies:FindFirstChild(MobName) or game.Workspace:FindFirstChild(MobName)
-                      if Target and Target:FindFirstChild("HumanoidRootPart") and Target.Humanoid.Health > 0 then
-                          EquipWeapon()
-                          Tween(Target.HumanoidRootPart.CFrame * CFrame.new(0, 10, 0)) -- Đứng trên đầu quái
-                          BringMob(MobName)
-                          AutoClick()
-                      else
-                          -- Nếu không thấy quái thì bay về bãi quái đợi spawn
-                          Tween(NPCCFrame * CFrame.new(0, 50, 0))
+                      for _, v in pairs(game.Workspace.Enemies:GetChildren()) do
+                          if v.Name == Mob and v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
+                              Tween(v.HumanoidRootPart.CFrame * CFrame.new(0, 10, 0))
+                              Attack()
+                          end
                       end
                   end
               end)
@@ -115,4 +91,42 @@ MainTab:CreateToggle({
    end,
 })
 
-Rayfield:Notify({Title = "MHBL-HUB KÍCH HOẠT", Content = "Nhấn Lá Cờ VN để ẩn/hiện!", Duration = 5})
+-- Tab Auto Stats
+StatsTab:CreateDropdown({
+   Name = "Chọn chỉ số nâng",
+   Options = {"Melee","Defense","Sword","Demon Fruit"},
+   CurrentOption = {"Melee"},
+   Callback = function(Option) _G.StatPoint = Option[1] end,
+})
+
+StatsTab:CreateToggle({
+   Name = "Auto Stats",
+   CurrentValue = false,
+   Callback = function(Value)
+      _G.AutoStats = Value
+      spawn(function()
+          while _G.AutoStats do
+              task.wait(1)
+              game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("AddPoint", _G.StatPoint, 1)
+          end
+      end)
+   end,
+})
+
+-- Tab Teleport (Sea 3)
+TPTab:CreateButton({
+   Name = "Bay tới Mansion (Dinh Thự)",
+   Callback = function() Tween(CFrame.new(-12463, 374, -7523)) end,
+})
+
+TPTab:CreateButton({
+   Name = "Bay tới Đảo Bánh (Cake Land)",
+   Callback = function() Tween(CFrame.new(-2020, 38, -12124)) end,
+})
+
+TPTab:CreateButton({
+   Name = "Bay tới Port Town (Cảng)",
+   Callback = function() Tween(CFrame.new(-290, 7, 5329)) end,
+})
+
+Rayfield:Notify({Title = "MHBL-HUB PRO", Content = "Đã tích hợp Sea 3 & Teleport!", Duration = 5})
