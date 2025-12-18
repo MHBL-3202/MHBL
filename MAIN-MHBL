@@ -1,0 +1,91 @@
+--[[
+    MHBL-HUB | OFFICIAL SOURCE CODE
+    Giao diện: Rayfield (Premium)
+    Tính năng: Auto Farm, Bring Mob, Tween, Key System
+]]
+
+-- 1. HỆ THỐNG KIỂM TRA KEY
+if getgenv().Key ~= "MHBL-HUB" then
+    game.Players.LocalPlayer:Kick("SAI KEY! Vui lòng dùng Key: MHBL-HUB")
+    return
+end
+
+-- 2. KHỞI TẠO UI (RAYFIELD)
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+local Window = Rayfield:CreateWindow({
+   Name = "MHBL-HUB | BANANA EDITION",
+   LoadingTitle = "Đang tải dữ liệu MHBL...",
+   LoadingSubtitle = "by MHBL Team",
+   ConfigurationSaving = { Enabled = true, FolderName = "MHBL_Configs" },
+   ImageToggle = {
+      Enabled = true,
+      Image = "rbxassetid://14374867455", -- ID Nút Lá cờ VN
+      Width = 60, Height = 60
+   }
+})
+
+-- 3. BIẾN ĐIỀU KHIỂN LOGIC
+_G.AutoFarm = false
+_G.SelectWeapon = "Melee"
+
+-- 4. HÀM TWEEN (DI CHUYỂN MƯỢT)
+local function Tween(TargetCFrame)
+    local Character = game.Players.LocalPlayer.Character
+    if Character and Character:FindFirstChild("HumanoidRootPart") then
+        local Distance = (TargetCFrame.p - Character.HumanoidRootPart.Position).Magnitude
+        local Speed = 300
+        local TweenService = game:GetService("TweenService")
+        local Info = TweenInfo.new(Distance/Speed, Enum.EasingStyle.Linear)
+        TweenService:Create(Character.HumanoidRootPart, Info, {CFrame = TargetCFrame}):Play()
+    end
+end
+
+-- 5. HÀM GOM QUÁI (BRING MOB)
+local function BringMob(MobName)
+    for _, v in pairs(game.Workspace.Enemies:GetChildren()) do
+        if v.Name == MobName and v:FindFirstChild("HumanoidRootPart") and v:FindFirstChild("Humanoid") then
+            if v.Humanoid.Health > 0 then
+                v.HumanoidRootPart.CFrame = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame
+                v.HumanoidRootPart.CanCollide = false
+                v.Humanoid.WalkSpeed = 0
+            end
+        end
+    end
+end
+
+-- 6. GIAO DIỆN TAB CHÍNH
+local MainTab = Window:CreateTab("Auto Farm", 4483345998)
+
+MainTab:CreateDropdown({
+   Name = "Chọn Vũ Khí",
+   Options = {"Melee","Sword","Fruit"},
+   CurrentOption = {"Melee"},
+   Callback = function(Option)
+      _G.SelectWeapon = Option[1]
+   end,
+})
+
+MainTab:CreateToggle({
+   Name = "Auto Farm Level",
+   CurrentValue = false,
+   Callback = function(Value)
+      _G.AutoFarm = Value
+      spawn(function()
+          while _G.AutoFarm do
+              task.wait()
+              -- Code logic farm sẽ được thêm tiếp vào đây
+              -- Ví dụ: BringMob("Bandit") 
+          end
+      end)
+   end,
+})
+
+-- 7. THÔNG BÁO KHI LOAD XONG
+Rayfield:Notify({
+   Title = "MHBL-HUB ĐÃ CHẠY",
+   Content = "Chào mừng bạn! Nhấn vào Lá cờ VN để Đóng/Mở Menu.",
+   Duration = 6.5,
+   Image = "rbxassetid://14374867455",
+})
+
+print("MHBL-HUB Source Loaded Successfully!")
