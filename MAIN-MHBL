@@ -1,42 +1,78 @@
---[[
-    MHBL-HUB | ORION STABLE EDITION
-    Fix: Lỗi không hiện UI
-]]
+-- MHBL-HUB | ULTRA LIGHT VERSION (ANTI-LAG & NO ERROR)
+-- Bản này chắc chắn sẽ lên vì không dùng Library ngoài.
 
--- 0. KHỞI TẠO HỆ THỐNG
 if not game:IsLoaded() then game.Loaded:Wait() end
 
--- 1. KIỂM TRA KEY
-if getgenv().Key ~= "MHBL-HUB" then
-    game.Players.LocalPlayer:Kick("Sai Key! Vui lòng dùng: MHBL-HUB")
-    return
-end
+-- 1. TẠO GIAO DIỆN GỐC (SCREEN GUI)
+local ScreenGui = Instance.new("ScreenGui")
+local MainFrame = Instance.new("Frame")
+local Title = Instance.new("TextLabel")
+local AutoFarmBtn = Instance.new("TextButton")
+local FastAttackBtn = Instance.new("TextButton")
+local RandomFruitBtn = Instance.new("TextButton")
 
--- 2. LOAD UI (Sử dụng link dự phòng ổn định hơn)
-local OrionLib = loadstring(game:HttpGet('https://raw.githubusercontent.com/jannidpro/Orion-UI-Library/main/source.lua'))()
-local Window = OrionLib:MakeWindow({
-    Name = "MHBL-HUB | PREMIUM 🍌", 
-    HidePremium = false, 
-    SaveConfig = true, 
-    ConfigFolder = "MHBL_Configs",
-    IntroText = "MHBL-HUB LOADING..."
-})
+ScreenGui.Parent = game.CoreGui
+ScreenGui.Name = "MHBL_HUB_ORIGINAL"
 
--- 3. BIẾN ĐIỀU KHIỂN
+MainFrame.Name = "MainFrame"
+MainFrame.Parent = ScreenGui
+MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+MainFrame.Position = UDim2.new(0.5, -100, 0.5, -100)
+MainFrame.Size = UDim2.new(0, 200, 0, 250)
+MainFrame.Active = true
+MainFrame.Draggable = true -- Có thể kéo menu di chuyển
+
+Title.Parent = MainFrame
+Title.Size = UDim2.new(1, 0, 0, 40)
+Title.Text = "MHBL-HUB PREMIUM"
+Title.TextColor3 = Color3.new(1, 1, 1)
+Title.BackgroundColor3 = Color3.fromRGB(255, 165, 0)
+
+-- 2. CÁC BIẾN CHỨC NĂNG
 _G.AutoFarm = false
 _G.FastAttack = true
-_G.AutoStats = false
-_G.StatPoint = "Melee"
 
--- 4. HÀM HỖ TRỢ
-local function Tween(Target)
-    pcall(function()
-        local Distance = (Target.p - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
-        game:GetService("TweenService"):Create(game.Players.LocalPlayer.Character.HumanoidRootPart, TweenInfo.new(Distance/350, Enum.EasingStyle.Linear), {CFrame = Target}):Play()
-    end)
-end
+-- 3. NÚT AUTO FARM
+AutoFarmBtn.Parent = MainFrame
+AutoFarmBtn.Position = UDim2.new(0, 10, 0, 60)
+AutoFarmBtn.Size = UDim2.new(0, 180, 0, 40)
+AutoFarmBtn.Text = "Auto Farm: OFF"
+AutoFarmBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+AutoFarmBtn.TextColor3 = Color3.new(1, 1, 1)
 
--- Fast Attack Loop
+AutoFarmBtn.MouseButton1Click:Connect(function()
+    _G.AutoFarm = not _G.AutoFarm
+    AutoFarmBtn.Text = _G.AutoFarm and "Auto Farm: ON" or "Auto Farm: OFF"
+    AutoFarmBtn.BackgroundColor3 = _G.AutoFarm and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(50, 50, 50)
+end)
+
+-- 4. NÚT FAST ATTACK
+FastAttackBtn.Parent = MainFrame
+FastAttackBtn.Position = UDim2.new(0, 10, 0, 110)
+FastAttackBtn.Size = UDim2.new(0, 180, 0, 40)
+FastAttackBtn.Text = "Fast Attack: ON"
+FastAttackBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+FastAttackBtn.TextColor3 = Color3.new(1, 1, 1)
+
+FastAttackBtn.MouseButton1Click:Connect(function()
+    _G.FastAttack = not _G.FastAttack
+    FastAttackBtn.Text = _G.FastAttack and "Fast Attack: ON" or "Fast Attack: OFF"
+    FastAttackBtn.BackgroundColor3 = _G.FastAttack and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(50, 50, 50)
+end)
+
+-- 5. NÚT RANDOM FRUIT
+RandomFruitBtn.Parent = MainFrame
+RandomFruitBtn.Position = UDim2.new(0, 10, 0, 160)
+RandomFruitBtn.Size = UDim2.new(0, 180, 0, 40)
+RandomFruitBtn.Text = "Random Fruit"
+RandomFruitBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+RandomFruitBtn.TextColor3 = Color3.new(1, 1, 1)
+
+RandomFruitBtn.MouseButton1Click:Connect(function()
+    game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("Cousin","BuyItem")
+end)
+
+-- 6. LOGIC FAST ATTACK
 spawn(function()
     while task.wait() do
         if _G.AutoFarm and _G.FastAttack then
@@ -48,29 +84,4 @@ spawn(function()
     end
 end)
 
--- 5. CÁC TAB
-local Tab1 = Window:MakeTab({ Name = "Auto Farm", Icon = "rbxassetid://4483345998" })
-local Tab2 = Window:MakeTab({ Name = "Trái Ác Quỷ", Icon = "rbxassetid://4483345998" })
-local Tab3 = Window:MakeTab({ Name = "Dịch Chuyển", Icon = "rbxassetid://4483345998" })
-
-Tab1:AddToggle({
-    Name = "Auto Farm Level",
-    Default = false,
-    Callback = function(Value) _G.AutoFarm = Value end    
-})
-
-Tab1:AddToggle({
-    Name = "Fast Attack",
-    Default = true,
-    Callback = function(Value) _G.FastAttack = Value end    
-})
-
-Tab2:AddButton({
-    Name = "Random Fruit",
-    Callback = function() game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("Cousin","BuyItem") end
-})
-
-Tab3:AddButton({ Name = "Tới Mansion", Callback = function() Tween(CFrame.new(-12463, 374, -7523)) end })
-Tab3:AddButton({ Name = "Tới Hydra Island", Callback = function() Tween(CFrame.new(5745, 610, -280)) end })
-
-OrionLib:Init()
+print("MHBL-HUB LOADED!")
